@@ -1,0 +1,7 @@
+List.sln
+Debug
+.vs
+List/Debug
+List/List.vcxproj
+List/List.vcxproj.filters
+List/List.vcxproj.user
