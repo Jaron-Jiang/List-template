@@ -1,6 +1,13 @@
 #pragma once
 #include<iostream>
 
+enum
+{
+	quick,
+	select,
+	bubble,
+	shell
+};
 template <class T>
 class List
 {
@@ -18,25 +25,56 @@ private:
 	{
 		if (index > Size || index <= 0)
 			return NULL;
-		Data* p = head;
-		for (int i = 2; i <= index; i++)
+		Data* p;
+		if (2 * index <= Size)
 		{
-			p = p->next;
+			p = head;
+			for (int i = 2; i <= index; ++i)
+			{
+				p = p->next;
+			}
+		}
+		else
+		{
+			p = end;
+			for (int i = Size - 1; i >= index; --i)
+			{
+				p = p->ahead;
+			}
 		}
 		return p;
 	}
+
 	static bool judge(T a, T b)//判断两个元素是否相同的内置函数，只对非结构体类型有效（用于unique的三个函数）
 	{
 		return a == b ? true : false;
 	}
+
 	static void Show(T a)//内置的展示列表内容的函数，只对非结构体类型有效（用于show函数）
 	{
 		std::cout << a << " ";
 	}
+
 	static bool cmp(T a, T b)
 	{
 		return a <= b ? true : false;
 	}
+
+	void swap(Data* p, Data* p1)
+	{
+		T s = p->data;
+		p->data = p1->data;
+		p1->data = s;
+	}
+
+	//快速排序
+	bool quick_sort(int start, int final, bool(*cmp)(T, T) = cmp);
+	//选择排序
+	bool select_sort(int start, int final, bool(*cmp)(T, T) = cmp);
+	//冒泡排序
+	bool bubble_sort(int start, int final, bool(*cmp)(T, T) = cmp);
+	//希尔排序
+	bool shell_sort(int start, int final, bool(*cmp)(T, T) = cmp);
 public:
 
 	//构造函数，初始化一个空的列表
@@ -104,13 +142,11 @@ public:
 	//交换下标index1与下标index2的数据(从0开始)
 	bool swap(int index1,int index2);
 	
-	//作用是排序，将下标从start到final（包括final）的数据进行排序，如果是结构体类型的数据，需要自己写排序的方式，当cmp返回为true时，表示两个数是要求的序列，不需要进行排序
-	bool sort(int start, int final, bool(*cmp)(T, T) = cmp);
-	//作用是排序，对列表的全部数据进行排序，如果是结构体类型的数据，需要自己写排序的方式，当cmp返回为true时，表示两个数是要求的序列，不需要进行排序
-	bool sort(bool(*cmp)(T, T) = cmp);
+	//选择排序并选择排序算法
+	bool sort(int start,int final,int model,bool(*cmp)(T, T) = cmp);
 
 	//差集运算A-B，即当前对象为A，输入的参数对象a即为B，进行A-B运算，*cmp为函数指针，用来判断两个元素是否相同，如果判断的是非基本数据类型，则需要自己传入判断函数
-	void complement(List& a, bool(*cmp)(T,T) = cmp);
+	void complement(List& a, bool(*cmp)(T,T) = cmp);	
 };
 
 template<class T>
@@ -544,12 +580,52 @@ bool List<T>::swap(int index1,int index2)
 }
 
 template<class T>
-bool List<T>::sort(int start, int final, bool(*cmp)(T, T))
+void List<T>::complement(List& a, bool(*cmp)(T, T))
 {
-	if (start >= final || final >= Size)
+	Data* p = head;
+	Data* p1;
+	for (int i = 0; i < Size; i++)
+	{
+		p = At(i + 1);
+		p1 = a.head;
+		for (int j = 0; j < a.size(); j++)
+		{
+			if (cmp(p->data, p1->data))
+			{
+				erase(i);
+				i--;
+				break;
+			}
+			p1 = p1->next;
+		}
+	}
+}
+
+template<class T>
+bool List<T>::sort(int start, int final, int model, bool(*cmp)(T, T))
+{
+	if (start<0 || final >= Size || start>final)
 	{
 		return false;
 	}
+	switch (model)
+	{
+	case quick:
+		return quick_sort(start, final, cmp);
+	case select:
+		return select_sort(start, final, cmp);
+	case bubble:
+		return bubble_sort(start,final,cmp);
+	case shell:
+		return shell_sort(start, final, cmp);
+	default:
+		return false;
+	}
+}
+
+template<class T>
+bool List<T>::select_sort(int start, int final, bool(*cmp)(T, T))
+{
 	Data* p = NULL;
 	Data* p1;
 	for (int i = start; i < final; i++)
@@ -569,29 +645,89 @@ bool List<T>::sort(int start, int final, bool(*cmp)(T, T))
 }
 
 template<class T>
-bool List<T>::sort(bool(*cmp)(T, T))
+bool List<T>::quick_sort(int start,int final,bool(*cmp)(T,T))
 {
-	return sort(0, Size - 1, cmp);
+	if(start < final)
+	{
+		Data* p = At(start + 2);
+		Data* p1 = At(final + 1);
+		Data* pre = p->ahead;
+		int i = start + 2, j = final + 1;
+		while (i <= j)
+		{
+			while (i <= j && cmp(p->data, pre->data))
+			{
+				p = p->next;
+				++i;
+			}
+			while (i <= j && cmp(pre->data, p1->data))
+			{
+				p1 = p1->ahead;
+				--j;
+			}
+			if (i <= j)
+			{
+				swap(p, p1);
+				++i;
+				p = p->next;
+				--j;
+				p1 = p1->ahead;
+			}
+		}
+		swap(pre, p1);
+		quick_sort(start, j - 2, cmp);
+		quick_sort(j, final, cmp);
+	}
+	return true;
 }
 
 template<class T>
-void List<T>::complement(List& a,bool(*cmp)(T,T))
+bool List<T>::bubble_sort(int start, int final, bool(*cmp)(T, T))
 {
-	Data* p = head;
-	Data* p1;
-	for (int i = 0; i < Size; i++)
+	bool flag;
+	Data* p;
+	for (int i = 1; i < Size; i++)
 	{
-		p = At(i + 1);
-		p1 = a.head;
-		for (int j = 0; j < a.size(); j++)
+		p = At(1);
+		flag = true;
+		for (int j = 0; j < Size - 1; j++)
 		{
-			if (cmp(p->data, p1->data))
+			if (!cmp(p->data, p->next->data))
 			{
-				erase(i);
-				i--;
-				break;
+				swap(p, p->next);
+				flag = false;
 			}
-			p1 = p1->next;
+			p = p->next;
 		}
+		if (flag)
+			break;
 	}
+	return true;
+}
+
+template<class T>
+bool List<T>::shell_sort(int start, int final, bool(*cmp)(T, T))
+{
+	int len = (int)ceil((final - start + 1) / 2.0);
+	int s;
+	Data* p = NULL;
+	Data* p1 = NULL;
+	while(len >= 1)
+	{
+		s = final - len;
+		for (int i = start; i <= s; i++)
+		{
+			for (int j = i; j <= s; j += len)
+			{
+				p = (j == i ? At(j + 1) : p->next);
+				p1 = (j == i ? At(j + len + 1) : p1->next);
+				if (!cmp(p->data, p1->data))
+				{
+					swap(p,p1);
+				}
+			}
+		}
+		len /= 2;
+	}
+	return true;
 }
