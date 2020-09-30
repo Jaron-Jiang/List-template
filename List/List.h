@@ -55,7 +55,7 @@ private:
 		std::cout << a << " ";
 	}
 
-	static bool cmp(T a, T b)
+	static bool cmp(T a, T b)////内置的展示列表内容的函数，只对非结构体类型有效（用于sort类函数和merge函数）
 	{
 		return a <= b ? true : false;
 	}
@@ -147,6 +147,11 @@ public:
 
 	//差集运算A-B，即当前对象为A，输入的参数对象a即为B，进行A-B运算，*cmp为函数指针，用来判断两个元素是否相同，如果判断的是非基本数据类型，则需要自己传入判断函数
 	void complement(List& a, bool(*cmp)(T,T) = cmp);	
+
+	//将有序表a和有序表b中的元素合并放到当前列表中(注意该函数是为了保证新和成的列表是有序的，因此当前的列表应该是空的，如果非空，会被清空然后合并)
+	bool merge(List& a, List& b, bool(*f)(T, T) = cmp);
+	//将有序表a中的元素合并放到当前列表中(注意该函数是为了保证新和成的列表是有序的，因此当前的列表应该是有序的)
+	bool merge(List& a, bool(*f)(T, T) = cmp);
 };
 
 template<class T>
@@ -728,6 +733,86 @@ bool List<T>::shell_sort(int start, int final, bool(*cmp)(T, T))
 			}
 		}
 		len /= 2;
+	}
+	return true;
+}
+
+template<class T>
+bool List<T>::merge(List& a, List& b, bool(*f)(T, T))
+{
+	try
+	{
+		clear();
+		Data* p1 = a.head;
+		Data* p2 = b.head;
+		while (p1&&p2)
+		{
+			if (f(p1->data, p2->data))
+			{
+				push_back(p1->data);
+				p1 = p1->next;
+			}
+			else
+			{
+				push_back(p2->data);
+				p2 = p2->next;
+			}
+		}
+		Data* p = (p1 == NULL ? p2 : p1);
+		while (p)
+		{
+			push_back(p->data);
+			p = p->next;
+		}
+	}
+	catch (const std::exception&)
+	{
+		return false;
+	}
+	return true;
+}
+
+template<class T>
+bool List<T>::merge(List& a, bool(*f)(T, T))
+{
+	try
+	{
+		Data* p1 = head;
+		Data* p2 = a.head;
+		while (p1&&p2)
+		{
+			if (f(p1->data, p2->data))
+			{
+				p1 = p1->next;
+			}
+			else
+			{
+				if (p1->ahead == NULL)
+				{
+					push_front(p2->data);
+					p2 = p2->next;
+				}
+				else
+				{
+					Data* s = new Data;
+					s->data = p2->data;
+					s->next = p1;
+					s->ahead = p1->ahead;
+					p1->ahead->next = s;
+					p1->ahead = s;
+					p2 = p2->next;
+				}
+			}
+		}
+		while (p2)
+		{
+			push_back(p2->data);
+			p2 = p2->next;
+		}
+	}
+	catch (const std::exception&)
+	{
+		return false;
 	}
 	return true;
 }
